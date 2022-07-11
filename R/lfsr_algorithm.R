@@ -1,11 +1,5 @@
-library(dplyr)
-library(flashier)
-library(tidyverse)
-library(ebnm)
-library(fields)
-library(dyno)
-library(dequer)
-source("code/drift_div_factorizations.R")
+#' Algorithm that uses the local false sign rate to construct a continuous form of the "drift" 
+#' factorization that is more robust to noise.
 
 #' Helper function that returns the loading from one additional divergence factor.
 #' Using the local false sign rate, it sets to zero those loadings for which we cannot be
@@ -27,12 +21,12 @@ get_divergence_factor_lfsr <- function(dat,lfsr_tol,loading,fl,divprior,Fprior){
     EF <- list(loading, ls.soln)
     #print("entering flash")
     next_fl <- fl %>%
-        flash.init.factors(
+        flashier::flash.init.factors(
             EF,
             ebnm.fn = c(divprior,Fprior)
         ) %>%
-        flash.fix.factors(kset = K + 1, mode = 1L, is.fixed = (loading == 0)) %>%
-        flash.backfit(kset = K + 1,extrapolate=FALSE)
+        flashier::flash.fix.factors(kset = K + 1, mode = 1L, is.fixed = (loading == 0)) %>%
+        flashier::flash.backfit(kset = K + 1,extrapolate=FALSE)
     #print("entering flash")
     loading <- next_fl$L.pm[,K+1]
     lfsr <- next_fl$L.lfsr[,K+1]
@@ -56,9 +50,9 @@ get_divergence_factor_lfsr <- function(dat,lfsr_tol,loading,fl,divprior,Fprior){
 #' @export
 lfsr_algorithm <- function(dat,
                       covar=FALSE,
-                      divprior = ebnm_point_laplace,
-                      driftprior = ebnm_point_exponential,
-                      Fprior = ebnm_normal,
+                      divprior = ebnm::ebnm_point_laplace,
+                      driftprior = ebnm::ebnm_point_exponential,
+                      Fprior = ebnm::ebnm_normal,
                       Kmax = Inf,
                       lfsr_tol = 1e-3,
                       min_pve = 0,
@@ -79,18 +73,18 @@ lfsr_algorithm <- function(dat,
 
     #create flash object with initial drift loading and initial divergence loading
     if (verbose.lvl > 0) {cat("S =",S,"\n")}
-    fl <- flash.init(dat,S=S) %>%
-        flash.set.verbose(verbose.lvl) %>%
+    fl <- flashier::flash.init(dat,S=S) %>%
+        flashier::flash.set.verbose(verbose.lvl) %>%
         #initialize L to be the ones vector, and F to be the least squares solution
-        flash.init.factors(list(ones, ls.soln),
+        flashier::flash.init.factors(list(ones, ls.soln),
                            ebnm.fn = c(driftprior,Fprior)) %>%
         #only fixing the first factor, and the we want to fix row loadings, so mode=1
-        flash.fix.factors(kset = 1, mode = 1) %>%
+        flashier::flash.fix.factors(kset = 1, mode = 1) %>%
         #backfit to match the priors
-        flash.backfit(extrapolate=FALSE)
+        flashier::flash.backfit(extrapolate=FALSE)
 
     #add first divergence factor to a queue (Breadth-first)
-    divergence_queue <- queue()
+    divergence_queue <- dequer::queue()
     new_div <- get_divergence_factor_lfsr(dat,lfsr_tol,loading=ones,fl,divprior,Fprior)
     pushback(divergence_queue,new_div)
 

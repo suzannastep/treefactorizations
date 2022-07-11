@@ -1,10 +1,4 @@
-library(dplyr)
-library(flashier)
-library(tidyverse)
-library(ebnm)
-library(fields)
-library(dyno)
-library(dequer)
+#' Functions to add drift and divergence factors
 
 #' Helper function for debugging. Shows how many samples with each label type are activated on
 #' a particular loading
@@ -35,7 +29,6 @@ get_sums_by_label <- function(labels,loading){
 #' @returns a new flash object with a new factor such that the associated loading matches the
 #' sparsity pattern from loading
 add_factor <- function(dat,loading,fl,prior,Fprior,allfixed=FALSE){
-  #print("entering add factor")
   K <- fl$n.factors
   #initializes factor to the least squares solution
   ls.soln  <- t(crossprod(loading,  dat - fitted(fl))/sum(loading))
@@ -43,27 +36,26 @@ add_factor <- function(dat,loading,fl,prior,Fprior,allfixed=FALSE){
   #create new flash object
   if (allfixed){
           next_fl <- fl %>%
-          flash.init.factors(
+          flashier::flash.init.factors(
               EF,
               ebnm.fn = c(prior,Fprior)
           ) %>%
           #if allfixed, is.fixed = TRUE, so entire loading is fixed to be binary
-          flash.fix.factors(kset = K + 1, mode = 1L, is.fixed = TRUE) %>%
+          flashier::flash.fix.factors(kset = K + 1, mode = 1L, is.fixed = TRUE) %>%
           # only backfit the most recently added factor
-          flash.backfit(kset = K + 1, extrapolate = FALSE)
+          flashier::flash.backfit(kset = K + 1, extrapolate = FALSE)
   }
   else {
       next_fl <- fl %>%
-          flash.init.factors(
+          flashier::flash.init.factors(
               EF,
               ebnm.fn = c(prior,Fprior)
           ) %>%
           # if not allfixed, only zero loadings are set to zero
-          flash.fix.factors(kset = K + 1, mode = 1L, is.fixed = (loading == 0)) %>%
+          flashier::flash.fix.factors(kset = K + 1, mode = 1L, is.fixed = (loading == 0)) %>%
           # only backfit the most recently added factor
-          flash.backfit(kset = K + 1, extrapolate = FALSE)
+          flashier::flash.backfit(kset = K + 1, extrapolate = FALSE)
   }
-  #print("leaving add factor")
   return(next_fl)
 }
 
@@ -76,19 +68,17 @@ add_factor <- function(dat,loading,fl,prior,Fprior,allfixed=FALSE){
 #' @param Fprior prior for the factors. Defaults to a normal prior.
 #' @returns the new posterior loading for the additional divergence factor
 get_divergence_factor <- function(dat,loading,fl,divprior,Fprior){
-  #print("entering get divergence factor")
   K <- fl$n.factors
   #initializes factor to the least squares solution
   ls.soln  <- t(crossprod(loading,  dat - fitted(fl))/sum(loading))
   EF <- list(loading, ls.soln)
   next_fl <- fl %>%
-    flash.init.factors(
+    flashier::flash.init.factors(
       EF,
       ebnm.fn = c(divprior,Fprior)
     ) %>%
-    flash.fix.factors(kset = K + 1, mode = 1L, is.fixed = (loading == 0)) %>%
-    flash.backfit(kset = K + 1, extrapolate = FALSE)
-  #print("leaving get divergence factor")
+    flashier::flash.fix.factors(kset = K + 1, mode = 1L, is.fixed = (loading == 0)) %>%
+    flashier::flash.backfit(kset = K + 1, extrapolate = FALSE)
   return(next_fl$L.pm[,K+1])
 }
 
@@ -105,9 +95,9 @@ get_divergence_factor <- function(dat,loading,fl,divprior,Fprior){
 #' @param labels Ground truth data labels for testing purposes
 #' @export
 drift_fit <- function(dat,
-                    divprior = ebnm_point_laplace,
-                    driftprior = ebnm_point_exponential,
-                    Fprior = ebnm_normal,
+                    divprior = ebnm::ebnm_point_laplace,
+                    driftprior = ebnm::ebnm_point_exponential,
+                    Fprior = ebnm::ebnm_normal,
                     Kmax = Inf,
                     min_pve = 0,
                     verbose.lvl = 0,
@@ -119,32 +109,32 @@ drift_fit <- function(dat,
   ls.soln <- t(crossprod(ones, dat)/nrow(dat))
 
   #create flash object with initial drift loading and initial divergence loading
-  fl <- flash.init(dat) %>%
-    flash.set.verbose(verbose.lvl) %>%
+  fl <- flashier::flash.init(dat) %>%
+    flashier::flash.set.verbose(verbose.lvl) %>%
     #initialize L to be the ones vector, and F to be the least squares solution
-    flash.init.factors(list(ones, ls.soln),
+    flashier::flash.init.factors(list(ones, ls.soln),
                        ebnm.fn = c(driftprior,Fprior)) %>%
     #only fixing the first factor, and the we want to fix row loadings, so mode=1
-    flash.fix.factors(kset = 1, mode = 1) %>%
+    flashier::flash.fix.factors(kset = 1, mode = 1) %>%
     #backfit to match the priors
-    flash.backfit(extrapolate = FALSE) %>%
+    flashier::flash.backfit(extrapolate = FALSE) %>%
     #add initial divergence loading
-    flash.add.greedy(
+    flashier::flash.add.greedy(
       Kmax = 1,
       ebnm.fn = c(divprior, Fprior)
     )
 
   #add divergence factor to a queue (Breadth-first)
-  divergence_queue <- queue()
-  pushback(divergence_queue,fl$L.pm[,2])
+  divergence_queue <- dequer::queue()
+  dequer::pushback(divergence_queue,fl$L.pm[,2])
   #remove divergence factor
   fl <- fl %>%
-    flash.remove.factors(kset = 2)
+    flashier::flash.remove.factors(kset = 2)
   K <- 1
 
   while(length(divergence_queue) > 0 && K < Kmax) {
     #pop the first divergence off the queue
-    current_divergence <- pop(divergence_queue)
+    current_divergence <- dequer::pop(divergence_queue)
     #split into loadings for positive and negative parts (1-0 indicator vectors)
     splus <- matrix(1L * (current_divergence > eps), ncol = 1)
     if (sum(splus) > 0) {
@@ -158,7 +148,7 @@ drift_fit <- function(dat,
         K <- fl$n.factors
         #enqueue new divergence
         new_div <- get_divergence_factor(dat,splus,fl,divprior,Fprior)
-        pushback(divergence_queue,new_div)
+        dequer::pushback(divergence_queue,new_div)
       }
     }
     sminus <- matrix(1L * (current_divergence < -eps), ncol = 1)
@@ -173,7 +163,7 @@ drift_fit <- function(dat,
         K <- fl$n.factors
         #enqueue new divergence
         new_div <- get_divergence_factor(dat,sminus,fl,divprior,Fprior)
-        pushback(divergence_queue,new_div)
+        dequer::pushback(divergence_queue,new_div)
       }
     }
 
@@ -198,9 +188,9 @@ drift_fit <- function(dat,
 #' @param labels Ground truth data labels for testing purposes
 #' @export
 div_fit <- function(dat,
-                      divprior = ebnm_point_laplace,
-                      driftprior = ebnm_point_exponential,
-                      Fprior = ebnm_normal,
+                      divprior = ebnm::ebnm_point_laplace,
+                      driftprior = ebnm::ebnm_point_exponential,
+                      Fprior = ebnm::ebnm_normal,
                       Kmax = Inf,
                       min_pve = 0,
                       verbose.lvl = 0,
@@ -212,30 +202,30 @@ div_fit <- function(dat,
   ls.soln <- t(crossprod(ones, dat)/nrow(dat))
 
   #create flash object with initial drift loading and initial divergence loading
-  fl <- flash.init(dat) %>%
-    flash.set.verbose(verbose.lvl) %>%
+  fl <- flashier::flash.init(dat) %>%
+    flashier::flash.set.verbose(verbose.lvl) %>%
     #initialize L to be the ones vector, and F to be the least squares solution
-    flash.init.factors(list(ones, ls.soln),
+    flashier::flash.init.factors(list(ones, ls.soln),
                        ebnm.fn = c(driftprior,Fprior)) %>%
     #only fixing the first factor, and the we want to fix row loadings, so mode=1
-    flash.fix.factors(kset = 1, mode = 1) %>%
+    flashier::flash.fix.factors(kset = 1, mode = 1) %>%
     #backfit to match the priors
-    flash.backfit(extrapolate = FALSE) %>%
+    flashier::flash.backfit(extrapolate = FALSE) %>%
     #add initial divergence loading
-    flash.add.greedy(
+    flashier::flash.add.greedy(
       Kmax = 1,
       ebnm.fn = c(divprior, Fprior)
     )
 
   #add divergence factor to a queue (Breadth-first)
-  divergence_queue <- queue()
-  pushback(divergence_queue,fl$L.pm[,2])
+  divergence_queue <- dequer::queue()
+  dequer::pushback(divergence_queue,fl$L.pm[,2])
 
   K <- fl$n.factors
 
   while(length(divergence_queue) > 0 && K < Kmax) {
     #pop the first divergence off the queue
-    current_divergence <- pop(divergence_queue)
+    current_divergence <- dequer::pop(divergence_queue)
 
     #add drift loading
     # TODO I think this is why the divergence factorization plots look weird?
@@ -261,7 +251,7 @@ div_fit <- function(dat,
         K <- fl$n.factors
         new_div <- fl$L.pm[,K]
         #enqueue new divergence
-        pushback(divergence_queue,new_div)
+        dequer::pushback(divergence_queue,new_div)
       }
     }
     #try to add a divergence within the negative loadings of the current divergence
@@ -274,7 +264,7 @@ div_fit <- function(dat,
         K <- fl$n.factors
         new_div <- fl$L.pm[,K]
         #enqueue new divergence
-        pushback(divergence_queue,new_div)
+        dequer::pushback(divergence_queue,new_div)
       }
     }
 
@@ -293,7 +283,7 @@ div_fit <- function(dat,
 #' @param prior prop for the loadings. Defaults to a point Laplace prior.
 #' @param Kmax the maximum number of factors to add. Defaults to 1000
 #' @export
-div_cov_fit <- function(covmat, prior = ebnm_point_laplace, Kmax = 1000) {
+div_cov_fit <- function(covmat, prior = ebnm::ebnm_point_laplace, Kmax = 1000) {
   fl <- div_fit(covmat, prior, Kmax)
   s2 <- max(0, mean(diag(covmat) - diag(fitted(fl))))
   s2_diff <- Inf

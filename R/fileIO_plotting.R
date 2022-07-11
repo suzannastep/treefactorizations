@@ -1,11 +1,5 @@
 # module for reading and formating the data
 # and plotting the dimnensionality reduced data with certain colors
-library(RColorBrewer)
-library(scales)
-library(dplyr)
-library(tidyverse)
-library(dyno)
-library(fields)
 
 #' Forms a tree object from a csv file
 #'
