@@ -1,12 +1,24 @@
 Package: treefactorizations
-Title: What the Package Does (One Line, Title Case)
+Title: Tree Factorizations of Data and Covariance Matrices
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    person("Suzanna", "Parkinson", , "sueparkinson@uchicago.edu", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0003-1863-1620"))
+Description: Functions for computing matrix factorizations of tree structured data,
+    especially the drift factorization, via EMBF and other methods.
+URL: https://github.com/suzannastep/treefactorizations
+License: `use_mit_license()`
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.0
+Depends:
+    R (>= 3.4)
+Imports:
+    flashier (>= 0.2),
+    ebnm (>= 0.1-21),
+    dequer
+Suggests:
+    testthat,
+    knitr,
+    rmarkdown,
+    scales
