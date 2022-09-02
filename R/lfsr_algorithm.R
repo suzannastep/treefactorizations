@@ -86,7 +86,7 @@ lfsr_algorithm <- function(dat,
     #add first divergence factor to a queue (Breadth-first)
     divergence_queue <- dequer::queue()
     new_div <- get_divergence_factor_lfsr(dat,lfsr_tol,loading=ones,fl,divprior,Fprior)
-    pushback(divergence_queue,new_div)
+    dequer::pushback(divergence_queue,new_div)
 
     while(length(divergence_queue) > 0 && fl$n.factors < Kmax) {
         if (verbose.lvl > 0) {cat("Length of Queue",length(divergence_queue),"\n")}
@@ -102,7 +102,7 @@ lfsr_algorithm <- function(dat,
                 fl <- next_fl
                 #enqueue new divergence
                 new_div <- get_divergence_factor_lfsr(dat,lfsr_tol,loading=splus,fl,divprior,Fprior)
-                pushback(divergence_queue,new_div)
+                dequer::pushback(divergence_queue,new_div)
             }
         }
         sminus <- matrix(1L * (current_divergence < 0), ncol = 1)
@@ -114,7 +114,7 @@ lfsr_algorithm <- function(dat,
                 fl <- next_fl
                 #enqueue new divergence
                 new_div <- get_divergence_factor_lfsr(dat,lfsr_tol,loading=sminus,fl,divprior,Fprior)
-                pushback(divergence_queue,new_div)
+                dequer::pushback(divergence_queue,new_div)
             }
         }
         if (verbose.lvl > 0) {cat("Factors:", fl$n.factors, "\n")}
