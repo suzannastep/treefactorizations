@@ -93,7 +93,7 @@ lfsr_algorithm <- function(dat,
     while(length(divergence_queue) > 0 && fl$n.factors < Kmax) {
         if (verbose.lvl > 0) {cat("Length of Queue",length(divergence_queue),"\n")}
         #pop the first divergence off the queue
-        current_divergence <- pop(divergence_queue)
+        current_divergence <- dequer::pop(divergence_queue)
         #split into positive and negative parts
         splus <- matrix(1L * (current_divergence > 0), ncol = 1)
         if (sum(splus) > 0 && fl$n.factors < Kmax) {
