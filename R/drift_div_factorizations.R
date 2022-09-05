@@ -28,6 +28,7 @@ get_sums_by_label <- function(labels,loading){
 #' Otherwise, fixes the entire loading
 #' @returns a new flash object with a new factor such that the associated loading matches the
 #' sparsity pattern from loading
+#' @importFrom magrittr %>%
 add_factor <- function(dat,loading,fl,prior,Fprior,allfixed=FALSE){
   K <- fl$n.factors
   #initializes factor to the least squares solution
@@ -67,6 +68,7 @@ add_factor <- function(dat,loading,fl,prior,Fprior,allfixed=FALSE){
 #' @param divprior divergence prior for loadings
 #' @param Fprior prior for the factors. Defaults to a normal prior.
 #' @returns the new posterior loading for the additional divergence factor
+#' @importFrom magrittr %>%
 get_divergence_factor <- function(dat,loading,fl,divprior,Fprior){
   K <- fl$n.factors
   #initializes factor to the least squares solution
@@ -93,6 +95,7 @@ get_divergence_factor <- function(dat,loading,fl,divprior,Fprior){
 #' @param verbose.lvl The level of verbosity of the function
 #' @param eps Tolerance for nonzero values in the loadings.
 #' @param labels Ground truth data labels for testing purposes
+#' @importFrom magrittr %>%
 #' @export
 drift_fit <- function(dat,
                     divprior = ebnm::ebnm_point_laplace,
@@ -186,6 +189,7 @@ drift_fit <- function(dat,
 #' @param verbose.lvl The level of verbosity of the function
 #' @param eps Tolerance for nonzero values in the loadings.
 #' @param labels Ground truth data labels for testing purposes
+#' @importFrom magrittr %>%
 #' @export
 div_fit <- function(dat,
                       divprior = ebnm::ebnm_point_laplace,

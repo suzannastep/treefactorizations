@@ -16,6 +16,7 @@ Depends:
 Imports:
     flashier (>= 0.2),
     ebnm (>= 0.1-21),
+    magrittr,
     dequer
 Suggests:
     testthat,

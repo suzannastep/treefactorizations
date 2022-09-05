@@ -12,6 +12,7 @@
 #' @param divprior divergence prior for loadings
 #' @param Fprior prior for the factors. Defaults to a normal prior.
 #' @returns the new posterior loading for the additional divergence factor
+#' @importFrom magrittr %>%
 #' @export
 get_divergence_factor_lfsr <- function(dat,lfsr_tol,loading,fl,divprior,Fprior){
     #print("entering get divergence lfsr")
@@ -47,6 +48,7 @@ get_divergence_factor_lfsr <- function(dat,lfsr_tol,loading,fl,divprior,Fprior){
 #' @param min_pve If the pve for a factor is less than this tolerance, the factor is rejected
 #' @param verbose.lvl The level of verbosity of the function
 #' @param labels Ground truth data labels for testing purposes
+#' @importFrom magrittr %>%
 #' @export
 lfsr_algorithm <- function(dat,
                       covar=FALSE,
